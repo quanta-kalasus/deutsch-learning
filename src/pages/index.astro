@@ -1,0 +1,595 @@
+---
+import NumCard from "../components/NumCard.astro";
+import PriceCard from "../components/PriceCard.astro";
+
+const basics: [number, string, string][] = [
+  [0,"null","nun"],[1,"eins","ains"],[2,"zwei","svai"],[3,"drei","drai"],
+  [4,"vier","fia"],[5,"fünf","fưn-ph"],[6,"sechs","zéc-s"],[7,"sieben","zi-bờn"],
+  [8,"acht","ak-t"],[9,"neun","nôn"],[10,"zehn","xên"],[11,"elf","éo-ph"],[12,"zwölf","svô-ph"],
+];
+const teens: [number, string][] = [
+  [13,"dreizehn"],[14,"vierzehn"],[15,"fünfzehn"],[16,"sechzehn ⚠"],
+  [17,"siebzehn ⚠"],[18,"achtzehn"],[19,"neunzehn"],
+];
+const zigs: [number, string][] = [
+  [20,"zwanzig"],[30,"dreißig ⚠"],[40,"vierzig"],[50,"fünfzig"],
+  [60,"sechzig ⚠"],[70,"siebzig ⚠"],[80,"achtzig"],[90,"neunzig"],
+];
+const flips: [number, string, string][] = [
+  [21,"ein·und·zwanzig","1-và-20"],[35,"fünf·und·dreißig","5-và-30"],
+  [47,"sieben·und·vierzig","7-và-40"],[58,"acht·und·fünfzig","8-và-50"],
+  [65,"fünf·und·sechzig","5-và-60 ≠ 56"],[91,"ein·und·neunzig","1-và-90"],
+];
+const tiers: [string, string, string, string][] = [
+  ["10²","hundert","ein·hundert","125 = hundert·fünf·und·zwanzig"],
+  ["10³","tausend","ein·tausend","1.234 = tausend·zweihundert·vier·und·dreißig"],
+  ["10⁶","die Million","eine Million","Das Haus kostet zwei Millionen Euro."],
+  ["10⁹","die Milliarde","eine Milliarde","⚠ tỷ = Milliarde, KHÔNG phải Billion!"],
+];
+const prices: [string, string, string][] = [
+  ["3,99 €","drei Euro neunundneunzig","3 euro 99 — kiểu siêu thị"],
+  ["0,50 €","fünfzig Cent","dưới 1€ → Cent"],
+  ["12,75 €","zwölf Euro fünfundsiebzig","mười hai euro bảy lăm"],
+  ["99,99 €","neunundneunzig Euro neunundneunzig","99 euro 99 =))"],
+  ["1.500 €","tausendfünfhundert Euro","một nghìn rưỡi"],
+  ["7,08 €","sieben Euro acht","7 euro 8 (không phải 'tám mươi'!)"],
+];
+const chapters = [
+  "Bìa", "Mục lục", "0–12 thuộc lòng", "13–19 · X+zehn", "Chục · X+zig",
+  "21–99 đọc ngược", "Trăm → Tỷ", "Đọc giá tiền", "Test nhanh", "Diktat", "An der Kasse",
+];
+---
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZAHLEN! — Übungsbuch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;700;900&family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,700;1,400&display=swap" rel="stylesheet">
+<style is:global>
+:root{
+  --paper:#F3EDDA; --paper-2:#EDE4C8; --ink:#181512;
+  --red:#DE2F1F; --yellow:#FFC61A; --green:#1E6B3C;
+  --shadow:6px 6px 0 var(--ink);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  background:var(--paper);color:var(--ink);
+  font-family:"IBM Plex Mono",monospace;overflow:hidden;height:100vh;
+  background-image:radial-gradient(rgba(24,21,18,.05) 1px, transparent 1px);
+  background-size:22px 22px;
+}
+::selection{background:var(--red);color:var(--paper)}
+
+/* ---------- BOOK STAGE ---------- */
+.bookstage{position:fixed;inset:0;display:grid;place-items:center;perspective:2600px}
+.book{position:relative;width:min(1240px,96vw);height:min(820px,90vh);transform-style:preserve-3d}
+.spread{
+  position:absolute;inset:0;
+  display:grid;grid-template-columns:1fr 1fr;
+  background:#FCF8EA;border:3px solid var(--ink);
+  box-shadow:0 24px 60px rgba(24,21,18,.35), 10px 10px 0 var(--ink);
+  border-radius:6px;overflow:hidden;
+  transform-origin:center left;
+  transition:transform .95s cubic-bezier(.25,.65,.3,1), opacity .7s;
+  visibility:hidden;opacity:0;transform:rotateY(-58deg);
+}
+.spread.active{visibility:visible;opacity:1;transform:rotateY(0)}
+.spread.passed{visibility:visible;opacity:0;transform:rotateY(-110deg)}
+.spread::before{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:3px;
+  background:linear-gradient(90deg,transparent,rgba(24,21,18,.25),transparent),var(--ink);
+  z-index:2;
+}
+.spread::after{
+  content:"";position:absolute;left:50%;top:0;bottom:0;width:70px;transform:translateX(-50%);
+  background:linear-gradient(90deg,transparent,rgba(24,21,18,.07) 40%,rgba(24,21,18,.07) 60%,transparent);
+  pointer-events:none;z-index:2;
+}
+.half{position:relative;padding:2.4rem 2.6rem;overflow:hidden}
+.half.dark{background:var(--ink);color:var(--paper)}
+.half.sunny{background:var(--yellow)}
+.half.paper2{background:var(--paper-2)}
+.pageno{position:absolute;bottom:.9rem;font-size:.7rem;letter-spacing:.2em;opacity:.5}
+.half:first-child>.pageno{right:1.2rem}
+.half:last-child>.pageno{left:1.2rem}
+.corner{position:absolute;bottom:0;width:0;height:0;border-style:solid;cursor:pointer;z-index:3;transition:border-width .15s}
+.corner.next{right:0;border-width:0 0 44px 44px;border-color:transparent transparent var(--yellow) transparent}
+.corner.next:hover{border-width:0 0 62px 62px}
+.corner.prev{left:0;border-width:0 44px 44px 0;border-color:transparent transparent var(--red) transparent}
+.corner.prev:hover{border-width:0 62px 62px 0}
+
+/* ---------- NAV CHROME ---------- */
+.chap{position:fixed;top:.9rem;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:.4rem 1.1rem;
+  font-size:.72rem;letter-spacing:.25em;z-index:10;white-space:nowrap}
+.navbtn{position:fixed;top:50%;transform:translateY(-50%);z-index:10;
+  width:3.4rem;height:3.4rem;border:3px solid var(--ink);
+  background:var(--yellow);font-family:"IBM Plex Mono";font-weight:700;font-size:1.3rem;
+  cursor:pointer;box-shadow:var(--shadow);transition:transform .12s,box-shadow .12s}
+.navbtn:hover{transform:translateY(-50%) translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+.navbtn:disabled{opacity:.3;cursor:default}
+#prevBtn{left:1.2rem}#nextBtn{right:1.2rem}
+.prog{position:fixed;bottom:.9rem;left:50%;transform:translateX(-50%);
+  display:flex;gap:.5rem;align-items:center;z-index:10;font-size:.72rem}
+.prog .pbar{width:9rem;height:.5rem;border:2px solid var(--ink);background:#fff}
+.prog .pfill{height:100%;background:var(--red);transition:width .8s}
+
+/* ---------- COVER ---------- */
+.cover{grid-template-columns:1fr;background:var(--red);color:var(--paper);display:grid;place-items:center;text-align:center}
+.cover::before,.cover::after{display:none}
+.cover-inner{padding:2rem;display:flex;flex-direction:column;align-items:center;gap:1.4rem}
+.cover .kicker{display:inline-block;background:var(--ink);color:var(--paper);padding:.35rem .9rem;font-size:.72rem;letter-spacing:.3em;transform:rotate(-2deg)}
+.cover h1{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:clamp(4rem,14vw,10rem);line-height:.85;text-transform:uppercase}
+.cover h1 .bang{color:var(--yellow);display:inline-block;transform:rotate(6deg)}
+.cover .sub{font-size:.85rem;line-height:1.7;max-width:30rem;border-left:4px solid var(--yellow);padding-left:1rem;text-align:left}
+.cover .opentag{background:var(--yellow);color:var(--ink);border:3px solid var(--ink);padding:.9rem 1.6rem;font-weight:700;box-shadow:var(--shadow);cursor:pointer;font-size:1rem}
+.cover .opentag:hover{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+.cover .barcode{height:2.8rem;width:14rem;background:repeating-linear-gradient(90deg,var(--paper) 0 2px,transparent 2px 5px,var(--paper) 5px 9px,transparent 9px 11px,var(--paper) 11px 12px,transparent 12px 16px)}
+.cover .isbn{font-size:.65rem;letter-spacing:.35em;opacity:.8}
+
+/* ---------- TOC ---------- */
+.toc-title{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:2.6rem;text-transform:uppercase}
+.toc-list{margin-top:1.6rem;display:flex;flex-direction:column}
+.toc-item{display:flex;justify-content:space-between;align-items:baseline;gap:.8rem;padding:.7rem .2rem;border-bottom:2px dashed var(--ink);cursor:pointer;font-size:.9rem;transition:background .12s}
+.toc-item:hover{background:var(--yellow)}
+.toc-item .t-idx{font-family:"Be Vietnam Pro";font-weight:900;color:var(--red)}
+.toc-item .t-page{opacity:.5;font-size:.75rem}
+
+/* ---------- CONTENT ---------- */
+.sec-head{display:flex;align-items:baseline;gap:.9rem;flex-wrap:wrap;margin-bottom:1.6rem}
+.sec-num{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;background:var(--red);color:var(--paper);padding:.15rem .7rem;font-size:1.15rem;transform:rotate(-3deg);box-shadow:4px 4px 0 var(--ink)}
+h2{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:clamp(1.4rem,3vw,2.2rem);text-transform:uppercase;line-height:1}
+.sec-de{font-size:.72rem;letter-spacing:.15em;opacity:.6;width:100%}
+h3.mini{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.1rem;text-transform:uppercase;margin-bottom:.9rem}
+
+.grid{display:grid;gap:.8rem}
+.g-nums{grid-template-columns:repeat(auto-fill,minmax(6.4rem,1fr))}
+.card{background:#fff;border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:.7rem .7rem .55rem;cursor:pointer;transition:transform .15s,box-shadow .15s,background .15s;position:relative;user-select:none}
+.card:hover{transform:translate(-2px,-4px) rotate(-1deg);box-shadow:6px 7px 0 var(--ink);background:var(--yellow)}
+.card:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--ink)}
+.card .n{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.9rem;color:var(--red)}
+.card .w{font-weight:700;font-size:.9rem;margin-top:.1rem}
+.card .p{font-size:.62rem;opacity:.6;margin-top:.1rem}
+.card .ear{position:absolute;top:.35rem;right:.45rem;font-size:.65rem;opacity:.45}
+
+.note{margin-top:1.2rem;background:var(--ink);color:var(--paper);padding:1rem 1.2rem;font-size:.78rem;line-height:1.75;box-shadow:4px 4px 0 var(--ink);border:3px solid var(--ink)}
+.note b{color:var(--yellow)}
+.note .vi{opacity:.7;font-style:italic}
+.note.light{background:var(--paper);color:var(--ink)}
+.note.light b{color:var(--red)}
+
+.formula{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap;font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:clamp(1.2rem,2.6vw,1.9rem);margin:1.2rem 0}
+.chip{background:#fff;border:3px solid var(--ink);padding:.25rem .8rem;box-shadow:4px 4px 0 var(--ink)}
+.chip.op{background:var(--red);color:var(--paper)}
+.chip.res{background:var(--yellow)}
+.examples{display:grid;grid-template-columns:repeat(auto-fit,minmax(9.5rem,1fr));gap:.8rem;margin-top:1rem}
+.ex{border:3px solid var(--ink);background:#fff;padding:.7rem .9rem;cursor:pointer;box-shadow:4px 4px 0 var(--ink);transition:background .15s}
+.ex:hover{background:var(--paper-2)}
+.ex .ex-n{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.5rem;color:var(--red)}
+.ex .ex-w{font-weight:700;font-size:.88rem}
+.ex .ex-vi{font-size:.68rem;opacity:.6}
+
+.flip-machine{border:3px solid var(--paper);padding:1.6rem 1.2rem;display:flex;flex-direction:column;gap:1.2rem;background:repeating-linear-gradient(-45deg,rgba(255,255,255,.03) 0 12px,transparent 12px 24px)}
+.flip-row{display:flex;align-items:center;gap:.8rem;flex-wrap:wrap;justify-content:center}
+.flip-cell{border:3px solid var(--paper);padding:.55rem 1rem;font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:clamp(1.1rem,2.6vw,1.7rem);text-align:center;min-width:4.6rem}
+.flip-cell.units{background:var(--yellow);color:var(--ink)}
+.flip-cell.tens{background:var(--red)}
+.flip-cell.und{background:transparent;font-size:1em}
+.arrow-seq{font-size:.7rem;letter-spacing:.12em;color:var(--yellow);text-align:center}
+.big-vs{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:clamp(1.8rem,4.6vw,3.2rem);text-align:center;color:var(--yellow)}
+.flip-demo{display:grid;grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr));gap:.8rem}
+.fdemo{border:3px solid var(--paper);padding:.8rem;cursor:pointer;text-align:center;transition:background .15s}
+.fdemo:hover{background:rgba(255,198,26,.12)}
+.fdemo .fd-n{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.7rem;color:var(--red)}
+.fdemo .fd-w{color:var(--yellow);font-weight:700;margin-top:.15rem;font-size:.85rem}
+.fdemo .fd-vi{font-size:.62rem;opacity:.65;margin-top:.15rem}
+.warn{background:var(--red);color:var(--paper);border:3px solid var(--paper);padding:.9rem 1.1rem;font-size:.78rem;line-height:1.7;transform:rotate(-.6deg)}
+.warn b{color:var(--yellow)}
+
+.stack{display:flex;flex-direction:column;gap:.8rem}
+.tier{display:grid;grid-template-columns:4.6rem 1fr;gap:1rem;align-items:center;border:3px solid var(--ink);background:#fff;padding:.9rem 1.1rem;box-shadow:4px 4px 0 var(--ink)}
+.tier .t-size{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.15rem;color:var(--red)}
+.tier .t-body{font-size:.8rem}
+.tier .t-ex{margin-top:.2rem;font-size:.72rem;opacity:.75;cursor:pointer}
+.tier .t-ex:hover{text-decoration:underline}
+.trap{margin-top:1.4rem;border:4px solid var(--red);background:#fff;box-shadow:6px 6px 0 var(--red);padding:1.1rem}
+.trap h3{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;color:var(--red);font-size:1.05rem;text-transform:uppercase;margin-bottom:.6rem}
+.trap table{width:100%;border-collapse:collapse;font-size:.75rem}
+.trap td,.trap th{border:2px solid var(--ink);padding:.45rem .6rem;text-align:left}
+.trap th{background:var(--ink);color:var(--paper);font-size:.65rem;letter-spacing:.12em}
+.trap .bad{color:var(--red);font-weight:700}
+.trap .good{color:var(--green);font-weight:700}
+.trap p{margin-top:.6rem;font-size:.7rem;opacity:.75}
+
+.price-board{display:grid;grid-template-columns:repeat(auto-fill,minmax(11rem,1fr));gap:.9rem}
+.pb{background:var(--paper);border:3px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:1rem;cursor:pointer;transition:transform .15s}
+.pb:hover{transform:rotate(-1deg) scale(1.02)}
+.pb .pb-p{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.8rem;color:var(--red)}
+.pb .pb-s{font-weight:700;margin-top:.15rem;font-size:.82rem}
+.pb .pb-vi{font-size:.65rem;opacity:.65;margin-top:.1rem}
+.rule-mini{display:flex;flex-direction:column;gap:.8rem}
+.rule-mini>div{border:3px solid var(--ink);background:#fff;padding:.85rem 1rem;font-size:.76rem;line-height:1.65;box-shadow:4px 4px 0 var(--ink)}
+.rule-mini b{color:var(--red)}
+
+.qbox{border:3px solid var(--paper);padding:1.4rem}
+.qbox.inkbox{border-color:var(--ink)}
+.q-num{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:clamp(2.6rem,6vw,4.2rem);color:var(--yellow);text-align:center;line-height:1}
+.q-opt{display:block;width:100%;margin-top:.7rem;background:transparent;border:3px solid var(--paper);color:var(--paper);font-family:"IBM Plex Mono";font-weight:700;font-size:.92rem;padding:.7rem 1rem;text-align:left;cursor:pointer;transition:background .12s,color .12s}
+.q-opt:hover{background:var(--paper);color:var(--ink)}
+.q-opt.right{background:var(--green);border-color:var(--green)}
+.q-opt.wrong{background:var(--red);border-color:var(--red);animation:shake .3s}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.q-meta{display:flex;justify-content:space-between;align-items:center;margin-top:1rem;font-size:.75rem}
+.q-next{background:var(--yellow);color:var(--ink);border:none;font-family:"IBM Plex Mono";font-weight:700;padding:.55rem 1.1rem;cursor:pointer}
+.dik-input{flex:1;background:transparent;border:3px solid var(--paper);color:var(--paper);font-family:'IBM Plex Mono';font-weight:700;font-size:1.05rem;padding:.7rem .9rem;outline:none}
+.gamemeta{font-size:.72rem;letter-spacing:.1em;opacity:.7;margin-bottom:.9rem}
+
+.backcover{grid-template-columns:1fr;display:grid;place-items:center}
+.backcover::before,.backcover::after{display:none}
+.receipt{width:min(24rem,86%);background:#fff;border:3px solid var(--ink);padding:1.8rem 1.5rem;font-size:.78rem;line-height:2;box-shadow:var(--shadow);position:relative}
+.receipt::after{content:"";position:absolute;left:0;right:0;bottom:-14px;height:14px;background:linear-gradient(-45deg,transparent 8px,#fff 0) 0 0/16px 16px repeat-x,linear-gradient(45deg,transparent 8px,#fff 0) 8px 0/16px 16px repeat-x;filter:drop-shadow(0 3px 0 var(--ink))}
+.receipt .r-line{display:flex;justify-content:space-between}
+.receipt .r-div{border-top:2px dashed var(--ink);margin:.7rem 0}
+.receipt .r-total{font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.15rem}
+.receipt .r-head{text-align:center;font-family:"Be Vietnam Pro",sans-serif;font-weight:900;font-size:1.05rem}
+.receipt .r-sub{text-align:center;font-size:.68rem;opacity:.6;margin-bottom:.5rem}
+.receipt .r-bar{margin-top:1rem}
+.receipt .barcode{height:2.2rem;background:repeating-linear-gradient(90deg,var(--ink) 0 2px,transparent 2px 5px,var(--ink) 5px 9px,transparent 9px 11px,var(--ink) 11px 12px,transparent 12px 16px)}
+.receipt .r-thanks{text-align:center;margin-top:.8rem;font-weight:700}
+.restart{margin-top:1.6rem;background:var(--yellow);border:3px solid var(--ink);padding:.7rem 1.3rem;font-family:"IBM Plex Mono";font-weight:700;cursor:pointer;box-shadow:var(--shadow)}
+.restart:hover{transform:translate(2px,2px);box-shadow:3px 3px 0 var(--ink)}
+
+/* ---------- SHORT VIEWPORT: shrink to fit ---------- */
+@media(max-height:760px){
+  .half{padding:1.6rem 2rem}
+  .g-nums{grid-template-columns:repeat(auto-fill,minmax(5.4rem,1fr))}
+  .card .n{font-size:1.5rem}
+  .examples{grid-template-columns:repeat(auto-fit,minmax(8rem,1fr))}
+  .price-board{grid-template-columns:repeat(auto-fill,minmax(9rem,1fr))}
+  .note{font-size:.7rem}
+}
+
+/* ---------- MOBILE: 1 column page ---------- */
+@media(max-width:860px){
+  .book{width:96vw;height:92vh}
+  .spread{grid-template-columns:1fr;overflow-y:auto;scrollbar-width:none}
+  .spread::-webkit-scrollbar{display:none}
+  .spread::before,.spread::after{display:none}
+  .half{padding:1.5rem 1.2rem}
+  .half:nth-child(2){border-top:3px dashed var(--ink)}
+  .navbtn{top:auto;bottom:.7rem;transform:none;width:3rem;height:3rem}
+  #prevBtn{left:.7rem}#nextBtn{right:.7rem}
+  .prog{bottom:1.6rem}
+}
+</style>
+</head>
+<body>
+
+<div class="chap" id="chap">ZAHLEN! — Übungsbuch</div>
+<button class="navbtn" id="prevBtn" aria-label="Trang trước">←</button>
+<button class="navbtn" id="nextBtn" aria-label="Trang sau">→</button>
+<div class="prog"><span id="pageno">0/11</span><div class="pbar"><div class="pfill" id="pfill" style="width:0%"></div></div></div>
+
+<div class="bookstage">
+<div class="book" id="book">
+
+<!-- 0 · COVER -->
+<section class="spread cover active">
+  <div class="cover-inner">
+    <span class="kicker">DEUTSCH FÜR VIETNAMER · ÜBUNGSBUCH</span>
+    <h1>Zah<span class="bang">l</span>en<span class="bang">!</span></h1>
+    <p class="sub"><b>Số đếm tiếng Đức từ 0 đến tỷ</b> — quy tắc "đọc ngược" khét tiếng,
+    cách hỏi giá đi chợ, và 3 trò chơi luyện tại quầy thu ngân.</p>
+    <div class="barcode"></div>
+    <div class="isbn">ISBN 978-3-ZAHLEN-07</div>
+    <button class="opentag" data-goto="1">Öffnen — Mở sách →</button>
+  </div>
+</section>
+
+<!-- 1 · TOC -->
+<section class="spread">
+  <div class="half paper2">
+    <div class="toc-title">Inhalt</div>
+    <div style="font-size:.72rem;letter-spacing:.15em;opacity:.6;margin-top:.3rem">MỤC LỤC — bấm để nhảy</div>
+  </div>
+  <div class="half">
+    <div class="toc-list">
+      {chapters.slice(2).map((c, i) => (
+        <div class="toc-item" data-goto={i + 2}>
+          <span><span class="t-idx">{String(i + 1).padStart(2, "0")}</span> — {c}</span>
+          <span class="t-page">tr.{i + 3}</span>
+        </div>
+      ))}
+      <div class="toc-item" data-goto={11}>
+        <span><span class="t-idx">✓</span> — Bìa sau · SUMME</span>
+        <span class="t-page">cuối</span>
+      </div>
+    </div>
+    <div class="note light" style="margin-top:1.4rem">
+      <b>Mẹo:</b> dùng phím <b>← →</b> hoặc vuốt để lật trang. Bấm vào mọi số/thẻ giá để nghe tiếng Đức.
+    </div>
+  </div>
+</section>
+
+<!-- 2 · 0-12 -->
+<section class="spread">
+  <div class="half">
+    <div class="sec-head"><span class="sec-num">01</span><h2>0 → 12</h2>
+      <span class="sec-de">thuộc lòng — nền của mọi số</span></div>
+    <div class="grid g-nums">
+      {basics.slice(0, 8).map(([n, w, p]) => <NumCard n={n} w={w} p={p} />)}
+    </div>
+    <div class="pageno">Seite 3</div>
+  </div>
+  <div class="half">
+    <div class="grid g-nums">
+      {basics.slice(8).map(([n, w, p]) => <NumCard n={n} w={w} p={p} />)}
+    </div>
+    <div class="note">
+      <b>⚠ Hai cái bẫy:</b> 6 = <b>sechs</b> ("zéc-s", đừng nói "sex" 😄) ·
+      7 = <b>sieben</b>. Nhớ kỹ vì sau bị cắt đuôi:
+      16 = <b>sechzehn</b> (mất s), 17 = <b>siebzehn</b> (mất en).<br>
+      <span class="vi">→ Bấm thẻ để nghe. Đọc to 3 vòng mỗi số.</span>
+    </div>
+    <div class="pageno">Seite 4</div>
+  </div>
+</section>
+
+<!-- 3 · TEENS -->
+<section class="spread">
+  <div class="half">
+    <div class="sec-head"><span class="sec-num">02</span><h2>13 → 19</h2>
+      <span class="sec-de">X + zehn · giống "-teen" tiếng Anh</span></div>
+    <div class="formula">
+      <span class="chip">drei</span><span class="chip op">+</span>
+      <span class="chip">zehn</span><span class="chip op">=</span>
+      <span class="chip res">dreizehn</span>
+    </div>
+    <div class="note">
+      <b>Ngoại lệ cắt đuôi:</b> 16 = sech<b>zehn</b> · 17 = sieb<b>zehn</b>.<br>
+      <span class="vi">Còn lại: nhét số trước "zehn" là xong.</span>
+    </div>
+    <div class="pageno">Seite 5</div>
+  </div>
+  <div class="half">
+    <div class="examples" style="margin-top:0">
+      {teens.map(([n, w]) => <NumCard n={n} w={w} variant="ex" p="🔊" />)}
+    </div>
+    <div class="pageno">Seite 6</div>
+  </div>
+</section>
+
+<!-- 4 · ZIG -->
+<section class="spread">
+  <div class="half">
+    <div class="sec-head"><span class="sec-num">03</span><h2>Chục tròn</h2>
+      <span class="sec-de">X + zig · 20 30 40 … 90</span></div>
+    <div class="formula">
+      <span class="chip">vier</span><span class="chip op">+</span>
+      <span class="chip">zig</span><span class="chip op">=</span>
+      <span class="chip res">vierzig</span>
+    </div>
+    <div class="note">
+      <b>⚠ Ba ngoại lệ:</b> 30 = drei<b>ßig</b> (không phải "dreizig"!) ·
+      60 = <b>sech</b>zig · 70 = <b>sieb</b>zig.
+    </div>
+    <div class="pageno">Seite 7</div>
+  </div>
+  <div class="half">
+    <div class="examples" style="margin-top:0">
+      {zigs.map(([n, w]) => <NumCard n={n} w={w} variant="ex" p="🔊" />)}
+    </div>
+    <div class="note light">
+      <span class="vi" style="font-style:italic;opacity:.7">"-zig" sẽ gặp lại ở mọi số 2 chữ số — trang kế tiếp.</span>
+    </div>
+    <div class="pageno">Seite 8</div>
+  </div>
+</section>
+
+<!-- 5 · FLIP -->
+<section class="spread">
+  <div class="half dark">
+    <div class="sec-head"><span class="sec-num">04</span><h2>21 → 99</h2>
+      <span class="sec-de" style="color:var(--yellow)">ĐỌC NGƯỢC — die berühmte Regel</span></div>
+    <div class="flip-machine">
+      <div class="flip-row">
+        <span class="flip-cell units">ĐƠN VỊ</span>
+        <span class="flip-cell und">und</span>
+        <span class="flip-cell tens">CHỤC</span>
+      </div>
+      <div class="arrow-seq">hàng đơn vị TRƯỚC → und → hàng chục SAU</div>
+      <div class="big-vs">65 = fünf·und·sechzig</div>
+      <div class="flip-row" style="font-size:.8rem">
+        <span>🗣️ "năm-và-sáu-mươi"</span><span>→</span>
+        <span style="color:var(--red);font-weight:700">≠ 56!</span>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:1.2rem">
+      <b>⚠</b> số tận cùng 1 → <b>ein</b>: einundzwanzig, einundvierzig…
+    </div>
+    <div class="pageno" style="color:var(--paper)">Seite 9</div>
+  </div>
+  <div class="half dark">
+    <h3 class="mini" style="color:var(--yellow)">Ví dụ — bấm nghe</h3>
+    <div class="flip-demo">
+      {flips.map(([n, w, vi]) => (
+        <div class="fdemo" data-speak={w.replace(/·/g, "")}>
+          <div class="fd-n">{n}</div><div class="fd-w">{w}</div><div class="fd-vi">{vi}</div>
+        </div>
+      ))}
+    </div>
+    <div class="pageno" style="color:var(--paper)">Seite 10</div>
+  </div>
+</section>
+
+<!-- 6 · BIG -->
+<section class="spread">
+  <div class="half">
+    <div class="sec-head"><span class="sec-num">05</span><h2>Trăm → Tỷ</h2>
+      <span class="sec-de">hundert → tausend → Million → Milliarde</span></div>
+    <div class="stack">
+      {tiers.map(([sz, name, base, ex]) => (
+        <div class="tier">
+          <div class="t-size">{sz}</div>
+          <div class="t-body"><b>{name}</b> · {base}
+            <div class="t-ex" data-speak={ex.includes("=") ? ex.split("=")[1].replace(/·/g, "").trim() : ex.replace(/^⚠ /, "")}>🔊 {ex}</div>
+          </div>
+        </div>
+      ))}
+    </div>
+    <div class="pageno">Seite 11</div>
+  </div>
+  <div class="half">
+    <div class="trap" style="margin-top:0">
+      <h3>⚠ Bẫy chết người</h3>
+      <table>
+        <tr><th>Số</th><th>Việt</th><th>Đức</th></tr>
+        <tr><td>10⁶</td><td>triệu</td><td class="good">die Million</td></tr>
+        <tr><td>10⁹</td><td>tỷ</td><td class="good">die Milliarde</td></tr>
+        <tr><td>10¹²</td><td>nghìn tỷ</td><td class="bad">die Billion = "trillion"!</td></tr>
+      </table>
+      <p>Million/Milliarde là <b>danh từ giống cái</b> → viết HOA:
+      "zwei Millionen Euro".</p>
+    </div>
+    <div class="note" style="margin-top:1.2rem">
+      <b>Đọc số lớn:</b> 1.234 = tausend·zwei·hundert·vier·und·dreißig —
+      vẫn rule đọc ngược cho phần lẻ.
+    </div>
+    <div class="pageno">Seite 12</div>
+  </div>
+</section>
+
+<!-- 7 · PRICES -->
+<section class="spread">
+  <div class="half sunny">
+    <div class="sec-head"><span class="sec-num">06</span><h2>Đọc giá tiền</h2>
+      <span class="sec-de">Preise lesen — bấm nghe</span></div>
+    <div class="price-board">
+      {prices.map(([price, say, vi]) => <PriceCard price={price} say={say} vi={vi} />)}
+    </div>
+    <div class="pageno">Seite 13</div>
+  </div>
+  <div class="half sunny">
+    <h3 class="mini">4 quy tắc vàng</h3>
+    <div class="rule-mini">
+      <div><b>≥ 1 €:</b> [euro] Euro [cent] → 11,65 € = "elf Euro fünfundsechzig".</div>
+      <div><b>&lt; 1 €:</b> nói Cent → 0,50 € = "fünfzig Cent". ❌ không nói "null Euro fünfzig".</div>
+      <div><b>Viết:</b> dấu PHẨY: 3,99 € (ngược tiếng Anh). Số lớn: 1.000.000.</div>
+      <div><b>Hỏi:</b> "Was kostet das?" (sg) / "Was kosten die?" (pl) → "Sie kostet/kosten …".</div>
+    </div>
+    <div class="pageno">Seite 14</div>
+  </div>
+</section>
+
+<!-- 8 · QUIZ -->
+<section class="spread">
+  <div class="half dark">
+    <div class="sec-head"><span class="sec-num">07</span><h2>Test nhanh</h2>
+      <span class="sec-de" style="color:var(--yellow)">câu hỏi sinh ngẫu nhiên, vô hạn</span></div>
+    <div class="gamemeta">Nhìn số → chọn cách đọc. Đáp án nhiễu dựng từ lỗi thật của người học:
+    lật số, thiếu "und", nhầm teen/zig, sai ßig.</div>
+    <div class="pageno" style="color:var(--paper)">Seite 15</div>
+  </div>
+  <div class="half dark">
+    <div class="qbox">
+      <div class="q-num" id="qNum">…</div>
+      <div id="qOpts"></div>
+      <div class="q-meta">
+        <span id="qScore">Điểm: 0 / 0</span>
+        <button class="q-next" data-action="nextQ">Câu tiếp →</button>
+      </div>
+    </div>
+    <div class="pageno" style="color:var(--paper)">Seite 16</div>
+  </div>
+</section>
+
+<!-- 9 · DIKTAT -->
+<section class="spread">
+  <div class="half dark">
+    <div class="sec-head"><span class="sec-num">08</span><h2>Diktat</h2>
+      <span class="sec-de" style="color:var(--yellow)">nghe → gõ số · kỹ năng khó nhất</span></div>
+    <div class="gamemeta">Nghe phát âm tiếng Đức, gõ lại con số. Mix 65% số 2 chữ số
+    (luyện đọc ngược), 20% số trăm, 15% giá tiền. Gõ "11,65" hoặc "11.65" đều được.</div>
+    <div class="pageno" style="color:var(--paper)">Seite 17</div>
+  </div>
+  <div class="half dark">
+    <div class="qbox">
+      <div style="text-align:center">
+        <button class="q-next" style="font-size:1rem;padding:.8rem 1.8rem" data-action="playDiktat">🔊 Nghe số</button>
+      </div>
+      <div style="display:flex;gap:.7rem;margin-top:1.1rem">
+        <input id="diktatIn" class="dik-input" type="text" inputmode="decimal" placeholder="gõ số… (vd: 65)">
+        <button class="q-next" data-action="checkDiktat">Check</button>
+      </div>
+      <div id="diktatFb" style="min-height:2rem;margin-top:.9rem;font-size:.85rem;line-height:1.6"></div>
+      <div class="q-meta">
+        <span id="diktatScore">Streak: 0 · Đúng: 0 / 0</span>
+        <button class="q-next" data-action="replayDiktat">↻ Nghe lại</button>
+      </div>
+    </div>
+    <div class="pageno" style="color:var(--paper)">Seite 18</div>
+  </div>
+</section>
+
+<!-- 10 · KASSE -->
+<section class="spread">
+  <div class="half sunny">
+    <div class="sec-head"><span class="sec-num">09</span><h2>An der Kasse</h2>
+      <span class="sec-de">quầy thu ngân — nghe giá, chọn thẻ</span></div>
+    <div class="gamemeta" style="opacity:.8">Khách "nói" giá bằng miệng → bạn chọn đúng
+    thẻ giá trong 4 cái. Nhiễu theo rule tiền: lật cent, hoán đổi euro/cent, lệch chục.</div>
+    <div class="note light"><b>Tình huống thật:</b> thu ngân REWE đọc "elf Euro
+    fünfundsechzig" — bạn có nghe ra 11,65 € không?</div>
+    <div class="pageno">Seite 19</div>
+  </div>
+  <div class="half sunny">
+    <div class="qbox inkbox">
+      <div style="text-align:center;margin-bottom:1.1rem">
+        <button class="q-next" style="border:3px solid var(--ink)" data-action="playKasse">🔊 Khách nói giá</button>
+        <button class="q-next" style="border:3px solid var(--ink);background:var(--paper)" data-action="replayKasse">↻ nghe lại</button>
+      </div>
+      <div class="price-board" id="kasseOpts" style="grid-template-columns:repeat(auto-fit,minmax(8.5rem,1fr))"></div>
+      <div id="kasseFb" style="min-height:1.8rem;margin-top:1rem;font-size:.82rem;line-height:1.6"></div>
+      <div class="q-meta">
+        <span id="kasseScore">Điểm: 0 / 0</span>
+        <button class="q-next" style="border:3px solid var(--ink)" data-action="playKasse">Khách tiếp →</button>
+      </div>
+    </div>
+    <div class="pageno">Seite 20</div>
+  </div>
+</section>
+
+<!-- 11 · BACK COVER -->
+<section class="spread backcover">
+  <div style="display:flex;flex-direction:column;align-items:center;padding:2rem">
+    <div class="receipt">
+      <div class="r-head">*** KAUFHAUS DEUTSCH ***</div>
+      <div class="r-sub">Bài học hôm nay · Heute gelernt</div>
+      <div class="r-div"></div>
+      <div class="r-line"><span>0–12 thuộc lòng</span><span>✓</span></div>
+      <div class="r-line"><span>13–19 → X+zehn</span><span>✓</span></div>
+      <div class="r-line"><span>Chục → X+zig</span><span>✓</span></div>
+      <div class="r-line"><span>21–99 đọc NGƯỢC</span><span>✓</span></div>
+      <div class="r-line"><span>tỷ = Milliarde ≠ Billion</span><span>✓</span></div>
+      <div class="r-line"><span>giá &lt;1€ → Cent</span><span>✓</span></div>
+      <div class="r-line"><span>Quiz · Diktat · Kasse</span><span>✓</span></div>
+      <div class="r-div"></div>
+      <div class="r-line r-total"><span>SUMME</span><span>DIE ZAHLEN ✓</span></div>
+      <div class="r-bar"><div class="barcode"></div></div>
+      <div class="r-thanks">DANKE! Bài tập: đọc giá 5 món trong tủ lạnh =))</div>
+    </div>
+    <button class="restart" data-goto="0">↺ Đọc lại từ đầu</button>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script>
+  import "../scripts/zahlen";
+</script>
+</body>
+</html>

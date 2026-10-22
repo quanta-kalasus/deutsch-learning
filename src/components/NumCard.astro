@@ -1,0 +1,19 @@
+---
+interface Props {
+  n: string | number;
+  w: string; // German word (may carry a ⚠ marker, stripped for TTS)
+  p?: string; // pronunciation / hint line
+  variant?: "card" | "ex";
+}
+const { n, w, p = "", variant = "card" } = Astro.props;
+const say = w.replace(/ ⚠/g, "");
+const cls =
+  variant === "ex" ? { box: "ex", n: "ex-n", w: "ex-w", p: "ex-vi" }
+                   : { box: "card", n: "n", w: "w", p: "p" };
+---
+<div class={cls.box} data-speak={say}>
+  {variant === "card" && <span class="ear">🔊</span>}
+  <div class={cls.n}>{n}</div>
+  <div class={cls.w} set:html={w} />
+  {p && <div class={cls.p}>{p}</div>}
+</div>

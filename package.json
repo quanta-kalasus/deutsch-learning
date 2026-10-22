@@ -1,0 +1,19 @@
+{
+  "name": "deutsch-lab",
+  "type": "module",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "n2words": "^6.3.0"
+  },
+  "devDependencies": {
+    "astro": "^5.14.0",
+    "vitest": "^3.2.0"
+  }
+}

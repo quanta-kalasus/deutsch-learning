@@ -1,0 +1,13 @@
+---
+interface Props {
+  price: string;
+  say: string;   // spoken German
+  vi?: string;   // Vietnamese note
+}
+const { price, say, vi = "" } = Astro.props;
+---
+<div class="pb" data-speak={say}>
+  <div class="pb-p">{price}</div>
+  <div class="pb-s">"{say}"</div>
+  <div class="pb-vi">{vi}</div>
+</div>
